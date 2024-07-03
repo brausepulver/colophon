@@ -3,7 +3,7 @@ import * as path from 'path';
 
 interface ExtensionConfiguration {
     filePatterns: string[];
-    ignorePaths: string[];
+    ignorePatterns: string[];
     minimumCopyPercentage: number;
     useRelativePath: boolean;
 }
@@ -20,7 +20,7 @@ function getConfiguration(): ExtensionConfiguration {
     const config = vscode.workspace.getConfiguration('Colophon');
     return {
         filePatterns: config.get('filePatterns', ['**/*']),
-        ignorePaths: config.get('ignorePaths', []),
+        ignorePatterns: config.get('ignorePatterns', []),
         minimumCopyPercentage: config.get('minimumCopyPercentage', 20),
         useRelativePath: config.get('useRelativePath', true)
     };
@@ -54,10 +54,19 @@ async function handleCopy(textEditor: vscode.TextEditor, edit: vscode.TextEditor
 }
 
 function shouldProcessFile(filePath: string, config: ExtensionConfiguration): boolean {
-    const { filePatterns, ignorePaths } = config;
+    const { filePatterns, ignorePatterns } = config;
+
+    if (filePath === 'git/scm0/input' || filePath.endsWith('.git')) {
+        return false;
+    }
 
     // Check if the file should be ignored
-    if (ignorePaths.some(ignorePath => filePath.includes(ignorePath))) {
+    const ignored = ignorePatterns.some(pattern => {
+        const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+        return regexPattern.test(filePath);
+    });
+
+    if (ignored) {
         return false;
     }
 
@@ -70,26 +79,28 @@ function shouldProcessFile(filePath: string, config: ExtensionConfiguration): bo
 
 async function copyAllOpenFilesWithComments() {
     const config = getConfiguration();
-    const openTextDocuments = vscode.workspace.textDocuments;
+    const visibleTextEditors = vscode.window.visibleTextEditors;
 
     let allText = '';
-	let count = 0;
+    let count = 0;
 
-    for (const document of openTextDocuments) {
+    for (const editor of visibleTextEditors) {
+        const document = editor.document;
         if (shouldProcessFile(document.fileName, config)) {
             const header = getCommentForFile(document, config);
             const fileContent = document.getText();
 
             allText += header + fileContent + '\n\n';
-			count++;
+            count++;
         }
     }
 
-	allText = allText.slice(0, -2);
+    allText = allText.trim();
 
-	await vscode.env.clipboard.writeText(allText);
-	vscode.window.showInformationMessage(`${count} open files copied with comments.`);
+    await vscode.env.clipboard.writeText(allText);
+    vscode.window.showInformationMessage(`${count} open files copied with comments.`);
 }
+
 
 function getCommentForFile(document: vscode.TextDocument, config: ExtensionConfiguration): string {
     const languageId = document.languageId;

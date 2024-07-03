@@ -2,7 +2,7 @@
   "name": "colophon",
   "displayName": "Colophon",
   "description": "Prepend a file name comment when copying large sections or entire contents of specified file types for use with LLMs.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "brausepulver",
   "engines": {
     "vscode": "^1.90.0"
@@ -29,10 +29,10 @@
           ],
           "description": "File patterns to match for inserting headers"
         },
-        "Colophon.ignorePaths": {
+        "Colophon.ignorePatterns": {
           "type": "array",
           "default": [],
-          "description": "Paths to ignore when inserting headers"
+          "description": "File patterns to ignore when inserting headers"
         },
         "Colophon.minimumCopyPercentage": {
           "type": "number",
