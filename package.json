@@ -1,0 +1,82 @@
+{
+  "name": "colophon",
+  "displayName": "Colophon",
+  "description": "Prepend a file name comment when copying large sections or entire contents of specified file types for use with LLMs.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Colophon",
+      "properties": {
+        "Colophon.filePatterns": {
+          "type": "array",
+          "default": [
+            "**/*"
+          ],
+          "description": "File patterns to match for inserting headers"
+        },
+        "Colophon.ignorePaths": {
+          "type": "array",
+          "default": [],
+          "description": "Paths to ignore when inserting headers"
+        },
+        "Colophon.minimumCopyPercentage": {
+          "type": "number",
+          "default": 20,
+          "description": "Minimum percentage of file content that needs to be copied for the header to be inserted"
+        },
+        "Colophon.useRelativePath": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use relative path instead of just the filename in comments."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "extension.copyAllFilesWithComments",
+        "title": "Colophon: Copy All Open Files with Comments"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "extension.copyAllFilesWithComments",
+        "key": "ctrl+shift+c",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "npm run check-types && node esbuild.js",
+    "check-types": "tsc --noEmit",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "vscode:prepublish": "npm run package",
+    "package": "npm run check-types && node esbuild.js --production"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "vsce": "^2.15.0"
+  }
+}
