@@ -10,10 +10,9 @@ interface ExtensionConfiguration {
 
 export function activate(context: vscode.ExtensionContext) {
     let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', handleCopy);
-    let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', handleCopy);
 	let copyAllFilesDisposable = vscode.commands.registerCommand('extension.copyAllFilesWithComments', copyAllOpenFilesWithComments);
 
-    context.subscriptions.push(copyDisposable, cutDisposable, copyAllFilesDisposable);
+    context.subscriptions.push(copyDisposable, copyAllFilesDisposable);
 }
 
 function getConfiguration(): ExtensionConfiguration {
@@ -30,20 +29,20 @@ async function handleCopy(textEditor: vscode.TextEditor, edit: vscode.TextEditor
     const document = textEditor.document;
     const selection = textEditor.selection;
     const config = getConfiguration();
+    const selectedText = document.getText(selection);
 
     if (!shouldProcessFile(document.fileName, config)) {
         // If the file doesn't match our patterns or is ignored, just perform the default copy
-        await vscode.commands.executeCommand('editor.action.clipboardCopyAction');
+        await vscode.env.clipboard.writeText(selectedText);
         return;
     }
 
     const totalLines = document.lineCount;
     const selectedLines = selection.end.line - selection.start.line + 1;
     const copyPercentage = (selectedLines / totalLines) * 100;
-	const selectedText = document.getText(selection);
 
     if (copyPercentage >= config.minimumCopyPercentage) {
-        const header = await getCommentForFile(document, config);
+        const header = getCommentForFile(document, config);
 
         // Modify clipboard content
         await vscode.env.clipboard.writeText(header + selectedText);
@@ -79,14 +78,13 @@ function shouldProcessFile(filePath: string, config: ExtensionConfiguration): bo
 
 async function copyAllOpenFilesWithComments() {
     const config = getConfiguration();
-    const visibleTextEditors = vscode.window.visibleTextEditors;
+    const textDocuments = vscode.workspace.textDocuments;
 
     let allText = '';
     let count = 0;
 
-    for (const editor of visibleTextEditors) {
-        const document = editor.document;
-        if (shouldProcessFile(document.fileName, config)) {
+    for (const document of textDocuments) {
+        if (!document.isClosed && shouldProcessFile(document.fileName, config)) {
             const header = getCommentForFile(document, config);
             const fileContent = document.getText();
 
