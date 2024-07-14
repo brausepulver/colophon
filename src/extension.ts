@@ -4,15 +4,13 @@ import * as path from 'path';
 interface ExtensionConfiguration {
     filePatterns: string[];
     ignorePatterns: string[];
-    minimumCopyPercentage: number;
     useRelativePath: boolean;
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', handleCopy);
 	let copyAllFilesDisposable = vscode.commands.registerCommand('extension.copyAllFilesWithComments', copyAllOpenFilesWithComments);
 
-    context.subscriptions.push(copyDisposable, copyAllFilesDisposable);
+    context.subscriptions.push(copyAllFilesDisposable);
 }
 
 function getConfiguration(): ExtensionConfiguration {
@@ -20,60 +18,8 @@ function getConfiguration(): ExtensionConfiguration {
     return {
         filePatterns: config.get('filePatterns', ['**/*']),
         ignorePatterns: config.get('ignorePatterns', []),
-        minimumCopyPercentage: config.get('minimumCopyPercentage', 20),
         useRelativePath: config.get('useRelativePath', true)
     };
-}
-
-async function handleCopy(textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) {
-    const document = textEditor.document;
-    const selection = textEditor.selection;
-    const config = getConfiguration();
-    const selectedText = document.getText(selection);
-
-    if (!shouldProcessFile(document.fileName, config)) {
-        // If the file doesn't match our patterns or is ignored, just perform the default copy
-        await vscode.env.clipboard.writeText(selectedText);
-        return;
-    }
-
-    const totalLines = document.lineCount;
-    const selectedLines = selection.end.line - selection.start.line + 1;
-    const copyPercentage = (selectedLines / totalLines) * 100;
-
-    if (copyPercentage >= config.minimumCopyPercentage) {
-        const header = getCommentForFile(document, config);
-
-        // Modify clipboard content
-        await vscode.env.clipboard.writeText(header + selectedText);
-    } else {
-        // If the selection is smaller than the threshold, just perform the default copy
-        await vscode.env.clipboard.writeText(selectedText);
-    }
-}
-
-function shouldProcessFile(filePath: string, config: ExtensionConfiguration): boolean {
-    const { filePatterns, ignorePatterns } = config;
-
-    if (filePath === 'git/scm0/input' || filePath.endsWith('.git')) {
-        return false;
-    }
-
-    // Check if the file should be ignored
-    const ignored = ignorePatterns.some(pattern => {
-        const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-        return regexPattern.test(filePath);
-    });
-
-    if (ignored) {
-        return false;
-    }
-
-    // Check if the file matches any of the patterns
-    return filePatterns.some(pattern => {
-        const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-        return regexPattern.test(filePath);
-    });
 }
 
 async function copyAllOpenFilesWithComments() {
@@ -99,6 +45,29 @@ async function copyAllOpenFilesWithComments() {
     vscode.window.showInformationMessage(`${count} open files copied with comments.`);
 }
 
+function shouldProcessFile(filePath: string, config: ExtensionConfiguration): boolean {
+    const { filePatterns, ignorePatterns } = config;
+
+    if (filePath === 'git/scm0/input' || filePath.endsWith('.git')) {
+        return false;
+    }
+
+    // Check if the file should be ignored
+    const ignored = ignorePatterns.some(pattern => {
+        const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+        return regexPattern.test(filePath);
+    });
+
+    if (ignored) {
+        return false;
+    }
+
+    // Check if the file matches any of the patterns
+    return filePatterns.some(pattern => {
+        const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
+        return regexPattern.test(filePath);
+    });
+}
 
 function getCommentForFile(document: vscode.TextDocument, config: ExtensionConfiguration): string {
     const languageId = document.languageId;

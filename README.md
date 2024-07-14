@@ -28,12 +28,6 @@ The extension provides the following configuration options under the `Colophon` 
 - **Default**: `[]`
 - **Description**: Paths to ignore when inserting headers. This option allows you to exclude certain files or directories from being processed by the extension.
 
-### `Colophon.minimumCopyPercentage`
-
-- **Type**: `number`
-- **Default**: `20`
-- **Description**: Minimum percentage of file content that needs to be copied for the header to be inserted. This option allows you to specify the threshold for when the file name comment should be added to the copied content.
-
 ### `Colophon.useRelativePath`
 
 - **Type**: `boolean`
@@ -52,7 +46,6 @@ The extension provides the following configuration options under the `Colophon` 
 {
   "Colophon.filePatterns": ["**/*.js", "**/*.ts"],
   "Colophon.ignorePaths": ["node_modules", "dist"],
-  "Colophon.minimumCopyPercentage": 50,
   "Colophon.useRelativePath": true
 }
 ```
